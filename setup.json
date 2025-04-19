@@ -1,0 +1,20 @@
+{
+    "1": {
+        "host": "localhost",
+        "port": 8000,
+        "test_send": false,
+        "successor": "2"
+    },
+    "2": {
+        "host": "localhost",
+        "port": 8001,
+        "test_send": true,
+        "successor": "3"
+    },
+    "3": {
+        "host": "localhost",
+        "port": 8002,
+        "test_send": false,
+        "successor": "1"
+    }
+}
