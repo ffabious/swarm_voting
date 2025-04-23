@@ -9,7 +9,13 @@ from pprint import pprint
 from enum import Enum
 import random
 
-LOG_FILE = "robot_logs.log"
+from metrics import get_common_log_file, get_log_file, get_metrics_file, RobotMetrics
+
+# Will be defined in main, according to the robot_id
+COMMON_LOG_FILE: str
+LOG_FILE: str
+METRICS_FILE: str
+metrics: RobotMetrics
 
 client_threads = []
 server_threads = []
@@ -33,8 +39,15 @@ def server_loop(socket, robot_id):
     try:
         with socket:
             while True:
+                start_time = time.time()
+
                 client_socket, addr = socket.accept()
+
+                end_time = time.time()
+                metrics.record_wait_time(end_time - start_time)
+
                 log_message(f"Robot{robot_id} : Accepted connection from {':'.join(map(str, addr))}.")
+
                 client_thread = threading.Thread(
                     target=handle_client,
                     args=(client_socket, robot_id)
@@ -55,8 +68,18 @@ def log_message(message):
 
     with open(LOG_FILE, "a") as log_file:
         log_file.write(log_line)
+    with open(COMMON_LOG_FILE, "a") as log_file:
+        log_file.write(log_line)
+
+def log_metrics():
+    metrics_data = metrics.get_metrics()
+    with open(METRICS_FILE, "a") as metrics_file:
+        metrics_file.write(f"\n==== Metrics at {datetime.now().isoformat()} ====\n")
+        pprint(metrics_data, metrics_file)
+        metrics_file.write("\n")
 
 def perform_action(action, robot_id):
+    start_time = time.time()
 
     # Simulate delay for action
     time.sleep(1)
@@ -74,6 +97,11 @@ def perform_action(action, robot_id):
     else:
         log_message(f"Robot{robot_id} : Unknown action '{action}'.")
 
+    action_time = time.time() - start_time
+    metrics.record_action_time(action_time)
+    metrics.increment_action_count(action.name)
+    log_message(f"Robot{robot_id} : Action '{action.name}' completed in {action_time:.2f} seconds.")
+
 def handle_action_message(message, robot_id):
     new_message = message.copy()
     host, port = robots[robot_id]["host"], robots[robot_id]["port"]
@@ -89,20 +117,28 @@ def handle_vote_message(message, robot_id):
     new_message['sender_host'] = host
     new_message['sender_port'] = port
 
+    topic = Topics(message['poll']['topic'])
+    start_time = time.time()
+
     die = random.randint(1, 10)
 
-    topic = Topics(message['poll']['topic']).name
+    is_vote_for = die >= 5
 
-    if die <= 10:
+    if is_vote_for:
         new_message['poll']['count_for'] += 1
-        log_message(f"Robot{robot_id} : Vote for '{topic}' from robot {message['sender_id']}.")
+        log_message(f"Robot{robot_id} : Vote for '{topic.name}' from robot {message['sender_id']}.")
     else:
         new_message['poll']['count_against'] += 1
-        log_message(f"Robot{robot_id} : Vote against '{topic}' from robot {message['sender_id']}.")
+        log_message(f"Robot{robot_id} : Vote against '{topic.name}' from robot {message['sender_id']}.")
+
+    end_time = time.time()
+    metrics.record_voting_time(topic.name, end_time - start_time)
+    metrics.record_vote(is_vote_for)
 
     return new_message
 
 def handle_server(server_host, server_port, robot_id, message):
+    start_time = time.time()
 
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as client_socket:
         client_socket.connect((server_host, server_port))
@@ -116,6 +152,11 @@ def handle_server(server_host, server_port, robot_id, message):
             topic = Topics(message[msg_type]['topic']).name
             log_message(f"Robot{robot_id} : Sent {msg_type} message on topic '{topic}' to "\
                         f"robot on {server_host}:{server_port}.")
+
+        propog_time = time.time() - start_time
+        metrics.record_propagation_time(message['type'], propog_time)
+        log_message(f"Robot{robot_id} : Message propagation to the next peer took {propog_time:.2f} seconds.")
+
         log_message(f"Robot{robot_id} : Closed connection to server {server_host}:{server_port}.")
         client_socket.close()
     return
@@ -126,8 +167,13 @@ def handle_client(client_socket, robot_id):
             data = client_socket.recv(1024)
             if not data:
                 break
+
+            receive_time = time.time()
             message = json.loads(data.decode('utf-8'))
             new_message = None
+
+            metrics.increment_message_count(message['type'])
+            log_message(f"Robot{robot_id} : Started processing {message['type']} message from robot {message['sender_id']}...")
 
             # Check message type
             if message['type'] == 'regular':
@@ -147,7 +193,7 @@ def handle_client(client_socket, robot_id):
                 if new_message['poll']['count_against'] > len(robots) // 2 or \
                     new_message['poll']['count_for'] + new_message['poll']['count_against'] == len(robots):
                     # If yes, log the rejection
-                    log_message(f"Robot{robot_id} : Proposal to '{topics(message['poll']['topic'])}' by " \
+                    log_message(f"Robot{robot_id} : Proposal to '{topics[message['poll']['topic']]}' by " \
                                 f"robot {message['poll']['initiator_id']} was rejected.")
                     
                 elif new_message['poll']['count_for'] > len(robots) // 2:
@@ -169,7 +215,7 @@ def handle_client(client_socket, robot_id):
                     
                 else:
                     # Continue the poll
-                    pass
+                    log_message(f"Robot{robot_id} : Poll for {topic} still in progress.")
 
             elif message['type'] == 'action':
                 topic = Topics(message['action']['topic']).name
@@ -208,6 +254,8 @@ def handle_client(client_socket, robot_id):
                 server_thread.start()
                 server_thread.join()
         
+            processed_time = time.time() - receive_time
+            log_message(f"Robot{robot_id} : Message processed in {processed_time:.2f} seconds.")
             break
     return
 
@@ -215,6 +263,10 @@ def main():
     global client_threads
     global server_threads
     global robots
+    global COMMON_LOG_FILE
+    global LOG_FILE
+    global METRICS_FILE
+    global metrics
 
     parser = argparse.ArgumentParser(description="Individual Robot Control")
     parser.add_argument(
@@ -271,6 +323,11 @@ def main():
     port = args.port
     test_send = args.test_send
 
+    COMMON_LOG_FILE = get_common_log_file()
+    LOG_FILE = get_log_file(robot_id)
+    METRICS_FILE = get_metrics_file(robot_id)
+    metrics = RobotMetrics(robot_id)
+
     if args.automate:
         with open(args.file, "r") as f:
             data = json.load(f)
@@ -295,7 +352,8 @@ def main():
         server_host = args.server_host
         server_port = args.server_port
     else:
-        pass
+        server_host = -1
+        server_port = -1
 
     try:    
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
@@ -303,7 +361,7 @@ def main():
             s.listen()
             log_message(f"Robot{robot_id} : Listening on {host}:{port}...")
             if test_send:
-                topic = Topics.LOOK_CUTE
+                topic = Topics(random.randint(1, 5))
 
                 message = {
                     'sender_id': robot_id,
@@ -338,6 +396,7 @@ def main():
             
     except KeyboardInterrupt:
         log_message(f"Robot{robot_id} : Shutting down...")
+        log_metrics()
         for t in client_threads:
             t.join()
 
