@@ -1,0 +1,23 @@
+{
+    "1": {
+        "host": "127.0.0.1",
+        "port": 8001,
+        "test_send": false,
+        "successor": 2,
+	"all_vote_against": true
+    },
+    "2": {
+        "host": "127.0.0.1",
+        "port": 8002,
+        "test_send": true,
+        "successor": 3,
+	"all_vote_against": true
+    },
+    "3": {
+        "host": "127.0.0.1",
+        "port": 8003,
+        "test_send": false,
+        "successor": 1,
+	"all_vote_against": true
+    }
+}
