@@ -12,7 +12,7 @@ function remove_logs() {
 }
 
 function run_robots() {
-    python3 robot.py -f setup3.json -a 1 &
+    python3 robot.py -f setup3.json -a 1 --test_send &
     python3 robot.py -f setup3.json -a 2 & 
     python3 robot.py -f setup3.json -a 3 &
     
@@ -90,7 +90,10 @@ remove_logs
 echo "Starting robots (timeout: ${TEST_TIMEOUT}s)..."
 run_robots
 
-pkill -9 python3 2>/dev/null || true
+echo "Shutting down robots cleanly via SIGINT…"
+pkill -2 -f "robot.py"
+sleep 5  
+
 echo "Robots stopped, checking logs..."
 
 metric_logs_exist $TOTAL_ROBOTS
