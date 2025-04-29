@@ -3,30 +3,33 @@
 TOTAL_ROBOTS=3
 
 function remove_logs() {
-    rm robot_metrics/*.log
-    rm robot_logs/*.log
+    echo "Removing old logs..."
+    rm -f robot_metrics/*.log 2>/dev/null || true
+    rm -f robot_logs/*.log 2>/dev/null || true
+
+    echo "Logs cleaned up."
 }
 
 function run_robots() {
-    python robot.py -f setup3.json -a 1 &
-    python robot.py -f setup3.json -a 2 & 
-    python robot.py -f setup3.json -a 3
+    python3 robot.py -f setup3.json -a 1 &
+    python3 robot.py -f setup3.json -a 2 & 
+    python3 robot.py -f setup3.json -a 3 
 }
 
 function analyze_logs() {
     failed_shutdowns=$(grep "Failed to send shutdown" robot_logs/all_robots.log | wc -l)
 
-    if [[ $(grep "Timeout reached in server loop") != "" ]]
+    if grep -q "Timeout reached in server loop" robot_logs/all_robots.log
     then
         echo "Timeout for swarm voting was exceeded"
-        exit 1
+        return 1
 
     elif [[ $failed_shutdowns != 0 ]]
     then
         echo "$failed_shutdowns robot(s) in the swarm failed to recieve a shutdown message."
-        exit 1
+        return 1
     fi
-    exit 0
+    return 0
 }
 
 function robot_logs_exist() {
@@ -36,12 +39,12 @@ function robot_logs_exist() {
     if [ ! -d $log_directory ]
     then
         echo "Directory '$log_directory' does not exist"
-        exit 1
+        return 1
     
     elif [ ! -f "$log_directory/all_robots.log" ]
     then
         echo "File '$log_directory/all_robots.log' does not exist."
-        exit 1
+        return 1
     fi
 
     for ((i=1;i<=n_robots;i++))
@@ -49,11 +52,11 @@ function robot_logs_exist() {
         if [ ! -f "$log_directory/robot_$i.log" ]
         then
             echo "Log '$log_directory/robot_$i.log' does not exist"
-            exit 1
+            return 1
         fi
     done
 
-    exit 0
+    return 0
 }
 
 function metric_logs_exist() {
@@ -63,7 +66,7 @@ function metric_logs_exist() {
     if [ ! -d $metric_directory ]
     then
         echo "Directory '$metric_directory' does not exist"
-        exit 1
+        return 1
     fi
 
     for ((i=1;i<=n_robots;i++))
@@ -71,11 +74,11 @@ function metric_logs_exist() {
         if [ ! -f "$metric_directory/robot_$i.log" ]
         then
             echo "Log '$metric_directory/robot_$i.log' does not exist"
-            exit 1
+            return 1
         fi
     done
 
-    exit 0
+    return 0
 }
 
 pkill -9 python
@@ -104,5 +107,6 @@ then
     exit 1
 fi
 
+pkill -9 python3 2>/dev/null || true
 echo "Success: Robots reached majority vote"
 exit 0
