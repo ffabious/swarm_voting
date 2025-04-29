@@ -19,6 +19,20 @@ Clone the repository:
    ```
 
 ## Usage
+The robot can be configured using command-line arguments:
+
+| Argument             | Type     | Description                                                                 |
+|----------------------|----------|-----------------------------------------------------------------------------|
+| `id`                 | int      | **(Required)** Unique ID of the robot.                                      |
+| `host`               | str      | Host address of the robot. Default: `localhost`.                            |
+| `port`               | int      | Port number of the robot. Default: `8000`.                                  |
+| `-a`, `--automate`   | flag     | Enable automatic configuration from a JSON file. Overrides host/port/test.  |
+| `-f`, `--file`       | str      | Path to the robot setup JSON file. Default: `setup3.json`.                  |
+| `--test_send`        | flag     | Enables sending a test message to a peer.                                   |
+| `--server_host`      | str      | Host of the peer server (used with `--test_send`). Default: `localhost`.    |
+| `--server_port`      | int      | Port of the peer server (used with `--test_send`).                          |
+| `--timeout`          | float    | Consensus timeout in seconds. Default: `30.0`.                              |
+| `--all_vote_against` | flag     | Forces robot to vote against any proposal (for testing purposes).           |
 
 1. Configure robot network in ```setupN.json```:
     ```json
@@ -46,3 +60,21 @@ Clone the repository:
     python robot.py -f setupN.json -a 2 &
     ...
     ```
+
+## Project Structure
+
+```bash
+swarm-voting/
+├── robot.py           # Core robot logic and communication
+├── metrics.py         # Metrics recording (action times, vote counts, etc.)
+├── setup3.json               # Sample setup config (3 robots)
+├── setup3_tie.json           # Config causing voting tie
+├── setup5.json               # Config for 5 robots
+├── robot_logs/              # Generated logs per robot
+├── robot_metrics/           # Collected metrics per robot
+├── tests/             # Bash scrripts to run swarm with timeout + log/metric validation
+└── README.md
+```
+## Contributing
+
+Feel free to fork the repo, make changes, and submit a pull request. Ensure code is formatted and commented clearly.
