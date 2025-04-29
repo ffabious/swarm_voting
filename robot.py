@@ -247,6 +247,7 @@ def handle_server(server_host, server_port, robot_id, message):
     start_time = time.time()
 
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as client_socket:
+        time.sleep(0.5)
         # Connect to target robot
         client_socket.connect((server_host, server_port))
         log_message(f"Robot{robot_id} : Connected to server {server_host}:{server_port}.")

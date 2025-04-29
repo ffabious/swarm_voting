@@ -1,6 +1,7 @@
 #!/bin/bash
 
 TOTAL_ROBOTS=5
+TEST_TIMEOUT=40
 
 function remove_logs() {
     rm -f robot_metrics/*.log 2>/dev/null || true
@@ -12,7 +13,9 @@ function run_robots() {
     python3 robot.py -f setup5.json -a 2 &
     python3 robot.py -f setup5.json -a 3 &
     python3 robot.py -f setup5.json -a 4 &
-    python3 robot.py -f setup5.json -a 5 
+    python3 robot.py -f setup5.json -a 5 &
+
+    sleep $TEST_TIMEOUT
 }
 
 function analyze_logs() {
@@ -82,9 +85,12 @@ function metric_logs_exist() {
 
 pkill -9 python3 2>/dev/null || true
 remove_logs
+echo "Starting robots (timeout: ${TEST_TIMEOUT}s)..."
 run_robots
 
-echo "Robots finished, checking metric logs..."
+pkill -9 python3 2>/dev/null || true
+echo "Robots stopped, checking logs..."
+
 metric_logs_exist $TOTAL_ROBOTS
 echo "Metrics logs checked."
 if [[ $? != 0 ]]

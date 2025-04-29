@@ -1,6 +1,7 @@
 #!/bin/bash
 
 TOTAL_ROBOTS=3
+TEST_TIMEOUT=40
 
 function remove_logs() {
     echo "Removing old logs..."
@@ -13,7 +14,9 @@ function remove_logs() {
 function run_robots() {
     python3 robot.py -f setup3.json -a 1 &
     python3 robot.py -f setup3.json -a 2 & 
-    python3 robot.py -f setup3.json -a 3 
+    python3 robot.py -f setup3.json -a 3 &
+    
+    sleep $TEST_TIMEOUT
 }
 
 function analyze_logs() {
@@ -81,10 +84,14 @@ function metric_logs_exist() {
     return 0
 }
 
-pkill -9 python
+pkill -9 python3
 remove_logs
+
+echo "Starting robots (timeout: ${TEST_TIMEOUT}s)..."
 run_robots
 
+pkill -9 python3 2>/dev/null || true
+echo "Robots stopped, checking logs..."
 
 metric_logs_exist $TOTAL_ROBOTS
 if [[ $? != 0 ]]
@@ -107,6 +114,5 @@ then
     exit 1
 fi
 
-pkill -9 python3 2>/dev/null || true
 echo "Success: Robots reached majority vote"
 exit 0
