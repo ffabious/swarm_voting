@@ -17,12 +17,6 @@ jobs:
         with:
           python-version: '3.x'
 
-      - name: Install Python dependencies
-        run: |
-          if [ -f requirements.txt ]; then
-            pip install -r requirements.txt
-          fi
-
       - name: Make all shell scripts executable
         run: |
           find . -type f -name '*.sh' -exec chmod +x {} \;
