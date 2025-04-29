@@ -8,6 +8,7 @@ on:
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
+    timeout-minutes: 5
 
     steps:
       - uses: actions/checkout@v4
@@ -26,5 +27,5 @@ jobs:
           set -e 
           for script in $(find . -type f -name '*.sh' | sort); do
             echo "Running $script"
-            $script
+            timeout 60s sudo $script
           done
