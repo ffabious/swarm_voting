@@ -4,15 +4,15 @@
         "port": 8001,
         "test_send": false,
         "successor": 2,
-	    "all_vote_against": true,
-        "faulty": false
+        "all_vote_against": false,
+        "faulty": true
     },
     "2": {
         "host": "127.0.0.1",
         "port": 8002,
         "test_send": true,
         "successor": 3,
-	    "all_vote_against": true,
+        "all_vote_against": false,
         "faulty": false
     },
     "3": {
@@ -20,7 +20,7 @@
         "port": 8003,
         "test_send": false,
         "successor": 1,
-	    "all_vote_against": true,
+        "all_vote_against": false,
         "faulty": false
     }
 }

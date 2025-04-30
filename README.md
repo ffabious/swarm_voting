@@ -33,6 +33,7 @@ The robot can be configured using command-line arguments:
 | `--server_port`      | int      | Port of the peer server (used with `--test_send`).                          |
 | `--timeout`          | float    | Consensus timeout in seconds. Default: `30.0`.                              |
 | `--all_vote_against` | flag     | Forces robot to vote against any proposal (for testing purposes).           |
+| `--faulty`           | flag     | Simulate a faulty robot (for testing purposes). Default: `false`.           |
 
 1. Configure robot network in ```setupN.json```:
     ```json

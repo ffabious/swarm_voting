@@ -3,7 +3,6 @@ import threading
 import time
 from datetime import datetime
 import argparse
-import threading
 import json
 from pprint import pprint
 from enum import Enum
@@ -21,6 +20,7 @@ metrics: RobotMetrics # Metrics tracker instance
 CONSENSUS_TIMEOUT = 30.0
 start_time_shutdown = None
 timeout_flag = False
+shutdown_flag = False
 
 all_vote_against = False
 
@@ -58,7 +58,7 @@ def server_loop(socket, robot_id):
     global timeout_flag, time_start_shutdown
     try:
         with socket:
-            while not timeout_flag:
+            while not timeout_flag and not shutdown_flag:
                 if start_time_shutdown and (time.time() - start_time_shutdown) > CONSENSUS_TIMEOUT:
                     log_message(f"Robot{robot_id} : Timeout reached in server loop")
                     perform_graceful_shutdown(robot_id)
@@ -148,6 +148,99 @@ def perform_action(action, robot_id):
     metrics.record_action_time(action_time)
     metrics.increment_action_count(action.name)
     log_message(f"Robot{robot_id} : Action '{action.name}' completed in {action_time:.2f} seconds.")
+
+def ping(sender_id, receiver_id) -> bool:
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        try:
+            s.connect((robots[receiver_id]["host"], robots[receiver_id]["port"]))
+            ping_msg = {
+                "type": "ping",
+                "sender_id": sender_id,
+                "message": f"Ping from robot {sender_id} to robot {receiver_id}."
+            }
+            s.sendall(json.dumps(ping_msg).encode('utf-8'))
+            log_message(f"Robot{sender_id} : Pinged robot {receiver_id}.")
+            return True
+        except socket.error as e:
+            log_message(f"Robot{sender_id} : Failed to ping robot {receiver_id}: {e}")
+            return False
+        
+def handle_update_message(message, robot_id):
+    """
+    Handle an update message from another robot.
+    Updates the successor information and logs the change.
+    """
+    global robots
+    new_successor = message['successor']
+    initiator_id = message['initiator_id']
+    faulty_robots = message['faulty_robots']
+
+    # Update the successor information
+    robots[initiator_id]["successor"] = new_successor
+    
+    # Remove faulty robots from the network
+    for faulty_robot in faulty_robots:
+        if faulty_robot in robots:
+            robots.pop(faulty_robot)
+
+    new_message = {
+        "type": "update",
+        "initiator_id": initiator_id,
+        "sender_id": robot_id,
+        "message": f"Robot {robot_id} has a new successor {new_successor}.",
+        "successor": new_successor,
+        "faulty_robots": faulty_robots
+    }
+    
+    log_message(f"Robot{robot_id} : Updated network as per message from robot {message['sender_id']}.")
+
+    return new_message
+
+def find_new_successor(robot_id):
+    global shutdown_flag
+    global robots
+    faulty_robots = []
+    new_successor = robots[robots[robot_id]["successor"]]["successor"]
+    
+    log_message(f"Robot{robot_id} : Looking for new successor starting from {new_successor}...")
+
+    while new_successor != robot_id:
+        if ping(robot_id, new_successor):
+            log_message(f"Robot{robot_id} : Found new successor {new_successor}.")
+            robots[robot_id]["successor"] = new_successor
+            break
+        else:
+            faulty_robots.append(new_successor)
+            log_message(f"Robot{robot_id} : No response from robot {new_successor}.")
+            new_successor = robots[new_successor]["successor"]
+
+    if new_successor == robot_id:
+        log_message(f"Robot{robot_id} : No successor found. I am alone in this world.")
+        log_message(f"Robot{robot_id} : Shutting down...")
+        shutdown_flag = True
+        exit(1)
+
+    for faulty_robot in faulty_robots:
+        robots.pop(faulty_robot)
+    
+    upd_message = {
+        "type": "update",
+        'initiator_id': robot_id,
+        "sender_id": robot_id,
+        "message": f"Robot {robot_id} has a new successor {new_successor}.",
+        "successor": new_successor,
+        "faulty_robots": faulty_robots
+    }
+
+    upd_message = handle_update_message(upd_message, robot_id)
+
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        try:
+            s.connect((robots[new_successor]["host"], robots[new_successor]["port"]))
+            s.sendall(json.dumps(upd_message).encode('utf-8'))
+            log_message(f"Robot{robot_id} : Sent update message to new successor {new_successor}.")
+        except socket.error as e:
+            log_message(f"Robot{robot_id} : Failed to send update message to new successor {new_successor}: {e}")
 
 def perform_graceful_shutdown(robot_id, send_shutdown_to_others=True):
     log_message(f"Robot{robot_id} : Shutting down initiated due to timeout...")
@@ -246,31 +339,49 @@ def handle_server(server_host, server_port, robot_id, message):
     global timeout_flag
     start_time = time.time()
 
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as client_socket:
-        time.sleep(0.5)
-        # Connect to target robot
-        client_socket.connect((server_host, server_port))
-        log_message(f"Robot{robot_id} : Connected to server {server_host}:{server_port}.")
+    try:
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as client_socket:
+            time.sleep(0.5)
+            # Connect to target robot
+            client_socket.connect((server_host, server_port))
+            log_message(f"Robot{robot_id} : Connected to server {server_host}:{server_port}.")
 
-        # Send the JSON message
-        client_socket.sendall(json.dumps(message).encode('utf-8'))
-        
-        # Log based on message type
-        if message['type'] == 'regular':
-            log_message(f"Robot{robot_id} : Sent message: '{message['message']}' to robot on {server_host}:{server_port}.")
-        else:
-            msg_type = message['type']
-            topic = Topics(message[msg_type]['topic']).name
-            log_message(f"Robot{robot_id} : Sent {msg_type} message on topic '{topic}' to "\
-                        f"robot on {server_host}:{server_port}.")
+            # Send the JSON message
+            client_socket.sendall(json.dumps(message).encode('utf-8'))
+            
+            # Log based on message type
+            if message['type'] == 'regular':
+                log_message(f"Robot{robot_id} : Sent message: '{message['message']}' to robot on {server_host}:{server_port}.")
+            elif message['type'] == 'ping':
+                log_message(f"Robot{robot_id} : Sent ping message to robot on {server_host}:{server_port}.")
+            elif message['type'] == 'update':
+                log_message(f"Robot{robot_id} : Sent update message to robot on {server_host}:{server_port}.")
+            else:
+                msg_type = message['type']
+                topic = Topics(message[msg_type]['topic']).name
+                log_message(f"Robot{robot_id} : Sent {msg_type} message on topic '{topic}' to "\
+                            f"robot on {server_host}:{server_port}.")
 
-        # Record propagation metrics
-        propog_time = time.time() - start_time
-        metrics.record_propagation_time(message['type'], propog_time)
-        log_message(f"Robot{robot_id} : Message propagation to the next peer took {propog_time:.2f} seconds.")
+            # Record propagation metrics
+            propog_time = time.time() - start_time
+            metrics.record_propagation_time(message['type'], propog_time)
+            log_message(f"Robot{robot_id} : Message propagation to the next peer took {propog_time:.2f} seconds.")
 
-        log_message(f"Robot{robot_id} : Closed connection to server {server_host}:{server_port}.")
-        client_socket.close()
+            log_message(f"Robot{robot_id} : Closed connection to server {server_host}:{server_port}.")
+            client_socket.close()
+    except socket.error as e:
+        log_message(f"Robot{robot_id} : Could not reach successor {server_host}:{server_port}. Error: {e}")
+        find_new_successor(robot_id)
+        new_successor = robots[robot_id]["successor"]
+        server_host = robots[new_successor]["host"]
+        server_port = robots[new_successor]["port"]
+        t = threading.Thread(
+            target=handle_server,
+            args=(server_host, server_port, robot_id, message),
+        )
+        server_threads.append(t)
+        t.start()
+        t.join()
     return
 
 def handle_client(client_socket, robot_id):
@@ -307,6 +418,18 @@ def handle_client(client_socket, robot_id):
                 # Simple message - just log it
                 log_message(f"Robot{robot_id} : Received regular message '{message['message']}' " \
                             f"from robot {message['sender_id']}.")
+                
+            elif message['type'] == 'ping':
+                log_message(f"Robot{robot_id} : Received ping message from robot {message['sender_id']}.")
+
+            elif message['type'] == 'update':
+                # Update message - update network information
+                log_message(f"Robot{robot_id} : Received update message from robot {message['sender_id']}.")
+
+                if message['initiator_id'] != robot_id:
+                    new_message = handle_update_message(message, robot_id)
+                else:
+                    log_message(f"Robot{robot_id} : Update message returned to initiator.")
 
             elif message['type'] == 'poll':
                 if start_time_shutdown is None and 'start_time' in message['poll']:
@@ -478,6 +601,12 @@ def main():
         help="Force all robots to always vote against any proposal",
         action='store_true'
     )
+    parser.add_argument(
+        '--faulty',
+        help="Simulate a faulty robot (default: False)",
+        action='store_true',
+        default=False
+    )
 
 
     args = parser.parse_args()
@@ -485,6 +614,7 @@ def main():
     host = args.host
     port = args.port
     test_send = args.test_send
+    faulty = args.faulty
     global CONSENSUS_TIMEOUT
     CONSENSUS_TIMEOUT = args.timeout
     global start_time_shutdown
@@ -498,11 +628,6 @@ def main():
     METRICS_FILE = get_metrics_file(robot_id)
     metrics = RobotMetrics(robot_id)
 
-    if start_time_shutdown is None:
-        start_time_shutdown = time.time()
-        log_message(f"Robot{robot_id} : Consensus timer started (timeout: {CONSENSUS_TIMEOUT}s)")
-
-
     # Load robot network configuration if in automated mode
     if args.automate:
         with open(args.file, "r") as f:
@@ -510,6 +635,7 @@ def main():
             host = data[str(robot_id)]["host"]
             port = data[str(robot_id)]["port"]
             test_send = data[str(robot_id)]["test_send"]
+            faulty = data[str(robot_id)]["faulty"]
             for id_str in data.keys():
                 info = data[id_str]
                 robots[int(id_str)] = {
@@ -520,8 +646,17 @@ def main():
                 }
             if not all_vote_against:  # if not stated in CLI
                 all_vote_against = robots[robot_id].get("all_vote_against", False)
+
+    if faulty:
+        log_message(f"Robot{robot_id} : Simulating a faulty robot. Shutting down...")
+        exit(1)
+
     print(f"Robot{robot_id}: List of comrades:")
     pprint(robots)
+
+    if start_time_shutdown is None:
+        start_time_shutdown = time.time()
+        log_message(f"Robot{robot_id} : Consensus timer started (timeout: {CONSENSUS_TIMEOUT}s)")
     
     # Determine where to send initial test message
     if test_send and robots[robot_id]["successor"] != -1:
