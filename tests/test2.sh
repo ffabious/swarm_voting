@@ -79,8 +79,7 @@ function metric_logs_exist() {
     return 0
 }
 
-pkill -9 python3 2>&1 >> /dev/null || true
-remove_logs
+pkill -9 python3 >> /dev/null 2>&1 || trueremove_logs
 run_robots
 
 echo "Robots finished, checking metric logs..."
@@ -110,6 +109,5 @@ then
     exit 1
 fi
 
-pkill -9 python3 2>&1 >> /dev/null || true
-echo "Script finished successfully."
+pkill -9 python3 >> /dev/null 2>&1 || trueecho "Script finished successfully."
 exit 0
