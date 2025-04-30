@@ -80,15 +80,16 @@ function metric_logs_exist() {
     return 0
 }
 
-pkill -9 python3 2>&1 >> /dev/null || true
+pkill -9 python3 >> /dev/null 2>&1 || true
 remove_logs
+
 echo "Starting robots..."
 run_robots
 
 pkill -2 -f "robot.py"
-sleep 5  
+sleep 5
 
-echo "Checking metrics now…"
+echo "Checking metrics now..."
 metric_logs_exist $TOTAL_ROBOTS
 echo "Metrics logs checked."
 if [[ $? != 0 ]]
@@ -115,6 +116,8 @@ then
     exit 1
 fi
 
-pkill -9 python3 2>&1 >> /dev/null || true
+
+
+pkill -9 python3 >> /dev/null 2>&1 || true
 echo "Script finished successfully."
 exit 0

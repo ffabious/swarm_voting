@@ -81,7 +81,8 @@ function metric_logs_exist() {
     return 0
 }
 
-pkill -9 python3 >> /dev/null 2>&1 || trueremove_logs
+pkill -9 python3 >> /dev/null 2>&1 || true
+remove_logs
 
 echo "Starting robots..."
 run_robots
