@@ -20,7 +20,7 @@
         "port": 8003,
         "test_send": false,
         "successor": 1,
-        "all_vote_against": true,
+        "all_vote_against": false,
         "faulty": false
     }
 }
