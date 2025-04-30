@@ -1,0 +1,162 @@
+{
+    "1": {
+        "host": "127.0.0.1",
+        "port": 8001,
+        "test_send": false,
+        "successor": 2,
+        "all_vote_against": false,
+        "faulty": false
+    },
+    "2": {
+        "host": "127.0.0.1",
+        "port": 8002,
+        "test_send": true,
+        "successor": 3,
+        "all_vote_against": false,
+        "faulty": false
+    },
+    "3": {
+        "host": "127.0.0.1",
+        "port": 8003,
+        "test_send": false,
+        "successor": 4,
+        "all_vote_against": false,
+        "faulty": false
+    },
+    "4": {
+        "host": "127.0.0.1",
+        "port": 8004,
+        "test_send": false,
+        "successor": 5,
+        "all_vote_against": false,
+        "faulty": false
+    },
+    "5": {
+        "host": "127.0.0.1",
+        "port": 8005,
+        "test_send": false,
+        "successor": 6,
+        "all_vote_against": false,
+        "faulty": false
+    },
+    "6": {
+        "host": "127.0.0.1",
+        "port": 8006,
+        "test_send": false,
+        "successor": 7,
+        "all_vote_against": false,
+        "faulty": true
+    },
+    "7": {
+        "host": "127.0.0.1",
+        "port": 8007,
+        "test_send": false,
+        "successor": 8,
+        "all_vote_against": false,
+        "faulty": false
+    },
+    "8": {
+        "host": "127.0.0.1",
+        "port": 8008,
+        "test_send": false,
+        "successor": 9,
+        "all_vote_against": false,
+        "faulty": false
+    },
+    "9": {
+        "host": "127.0.0.1",
+        "port": 8009,
+        "test_send": false,
+        "successor": 10,
+        "all_vote_against": false,
+        "faulty": false
+    },
+    "10": {
+        "host": "127.0.0.1",
+        "port": 8010,
+        "test_send": false,
+        "successor": 11,
+        "all_vote_against": false,
+        "faulty": false
+    },
+    "11": {
+        "host": "127.0.0.1",
+        "port": 8011,
+        "test_send": false,
+        "successor": 12,
+        "all_vote_against": false,
+        "faulty": true
+    },
+    "12": {
+        "host": "127.0.0.1",
+        "port": 8012,
+        "test_send": false,
+        "successor": 13,
+        "all_vote_against": false,
+        "faulty": false
+    },
+    "13": {
+        "host": "127.0.0.1",
+        "port": 8013,
+        "test_send": false,
+        "successor": 14,
+        "all_vote_against": false,
+        "faulty": true
+    },
+    "14": {
+        "host": "127.0.0.1",
+        "port": 8014,
+        "test_send": false,
+        "successor": 15,
+        "all_vote_against": false,
+        "faulty": false
+    },
+    "15": {
+        "host": "127.0.0.1",
+        "port": 8015,
+        "test_send": false,
+        "successor": 16,
+        "all_vote_against": false,
+        "faulty": false
+    },
+    "16": {
+        "host": "127.0.0.1",
+        "port": 8016,
+        "test_send": false,
+        "successor": 17,
+        "all_vote_against": false,
+        "faulty": false
+    },
+    "17": {
+        "host": "127.0.0.1",
+        "port": 8017,
+        "test_send": false,
+        "successor": 18,
+        "all_vote_against": false,
+        "faulty": false
+    },
+    "18": {
+        "host": "127.0.0.1",
+        "port": 8018,
+        "test_send": false,
+        "successor": 19,
+        "all_vote_against": false,
+        "faulty": false
+    },
+    "19": {
+        "host": "127.0.0.1",
+        "port": 8019,
+        "test_send": false,
+        "successor": 20,
+        "all_vote_against": false,
+        "faulty": true
+    },
+    "20": {
+        "host": "127.0.0.1",
+        "port": 8020,
+        "test_send": false,
+        "successor": 1,
+        "all_vote_against": false,
+        "faulty": false
+    }
+}
