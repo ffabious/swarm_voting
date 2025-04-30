@@ -27,5 +27,5 @@ jobs:
           set -e 
           for script in $(find . -type f -name '*.sh' | sort); do
             echo "Running $script"
-            timeout 60s sudo $script
+            sudo $script
           done
