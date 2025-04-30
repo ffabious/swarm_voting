@@ -81,11 +81,11 @@ A suite of shell scripts under ```tests/``` automates end-to-end scenarios:
 
 To run tests locally:
 
-    ```bash
-    bash tests/test1.sh # setup3.json - 3 robots in the swarm with normal voting behavior
-    bash tests/test2.sh # setup3_tie - 3 robots, configured to always vote against
-    bash tests/test3.sh # setup5.sh - 5 robots in the swarm with normal voting behavior
-    ```
+```bash
+bash tests/test1.sh # setup3.json - 3 robots in the swarm with normal voting behavior
+bash tests/test2.sh # setup3_tie - 3 robots, configured to always vote against
+bash tests/test3.sh # setup5.sh - 5 robots in the swarm with normal voting behavior
+```
 CI integration via GitHub Actions ensures tests are executed on every push/PR.
 
 ## Logs & Metrics
