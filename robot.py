@@ -83,6 +83,7 @@ def server_loop(socket, robot_id):
                 client_threads.append(client_thread)
                 client_thread.start()
                 client_thread.join()
+            socket.close()
     except KeyboardInterrupt:
         return
     except Exception as e:
@@ -243,7 +244,11 @@ def find_new_successor(robot_id):
             log_message(f"Robot{robot_id} : Failed to send update message to new successor {new_successor}: {e}")
 
 def perform_graceful_shutdown(robot_id, send_shutdown_to_others=True):
-    log_message(f"Robot{robot_id} : Shutting down initiated due to timeout...")
+    global shutdown_flag
+    global robots
+
+    shutdown_flag = True
+    log_message(f"Robot{robot_id} : Shutting down initiated...")
 
     if send_shutdown_to_others:
         shutdown_msg = {
@@ -456,7 +461,6 @@ def handle_client(client_socket, robot_id):
                 elif new_message['poll']['count_for'] > len(robots) // 2:
                     # Majority for - perform the action
                     perform_action(Topics(message['poll']['topic']), robot_id)
-                    perform_graceful_shutdown(robot_id)
 
 
                     # Convert to action message and propagate
@@ -491,6 +495,7 @@ def handle_client(client_socket, robot_id):
                     log_message(f"Robot{robot_id} : Action '{topic}' " \
                                 f"returned to initiator.")
                     new_message = None
+                    perform_graceful_shutdown(robot_id)
                     
             elif message['type'] == 'shutdown':             
                 perform_graceful_shutdown(robot_id, send_shutdown_to_others=False)
@@ -523,6 +528,7 @@ def handle_client(client_socket, robot_id):
                 perform_graceful_shutdown(robot_id)
                 return
             break
+        client_socket.close()
     return
 
 def main():
@@ -649,6 +655,7 @@ def main():
 
     if faulty:
         log_message(f"Robot{robot_id} : Simulating a faulty robot. Shutting down...")
+        log_metrics()
         exit(1)
 
     print(f"Robot{robot_id}: List of comrades:")

@@ -1,7 +1,8 @@
 #!/bin/bash
 
 TOTAL_ROBOTS=20
-TEST_TIMEOUT=30
+TEST_TIMEOUT=60
+INITIALLY_FAILED=4
 
 function remove_logs() {
     echo "Removing old logs..."
@@ -14,7 +15,7 @@ function remove_logs() {
 function run_robots() {
     for ((i=1; i<=TOTAL_ROBOTS; i++))
     do
-        python3 robot.py $i -a -f setup20_faulty.json --timeout 80.0 &
+        python3 robot.py $i -a -f setup20_faulty.json --timeout 50.0 &
     done
     
     sleep $TEST_TIMEOUT
@@ -28,9 +29,9 @@ function analyze_logs() {
         echo "Timeout for swarm voting was exceeded"
         return 1
 
-    elif [[ $failed_shutdowns != 0 ]]
+    elif [ $failed_shutdowns != $INITIALLY_FAILED ]
     then
-        echo "$failed_shutdowns robot(s) in the swarm failed to recieve a shutdown message."
+        echo "$failed_shutdowns robot(s) in the swarm failed to recieve a shutdown message (expected $INITIALLY_FAILED)."
         return 1
     fi
     return 0

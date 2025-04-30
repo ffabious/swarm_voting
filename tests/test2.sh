@@ -22,7 +22,7 @@ function analyze_logs() {
         echo "Timeout for swarm voting was exceeded"
         return 1
 
-    elif [[ $failed_shutdowns != 0 ]]
+    elif [ $failed_shutdowns != 0 ]
     then
         echo "$failed_shutdowns robot(s) in the swarm failed to recieve a shutdown message."
         return 1
