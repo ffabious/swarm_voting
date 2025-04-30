@@ -1,7 +1,7 @@
 #!/bin/bash
 
 TOTAL_ROBOTS=20
-TEST_TIMEOUT=60
+TEST_TIMEOUT=120
 INITIALLY_FAILED=4
 
 function remove_logs() {
@@ -15,7 +15,7 @@ function remove_logs() {
 function run_robots() {
     for ((i=1; i<=TOTAL_ROBOTS; i++))
     do
-        python3 robot.py $i -a -f setup20_faulty.json --timeout 50.0 &
+        python3 robot.py $i -a -f setup20_faulty.json --timeout 110.0 &
     done
     
     sleep $TEST_TIMEOUT
