@@ -310,9 +310,9 @@ def handle_vote_message(message, robot_id):
             is_vote_for = False
             log_message(f"Robot{robot_id} : Vote against '{topic.name}' (forced by all_vote_against).")
         else:
-            # Simulate random voting (50% chance for/against)
+            # Simulate random voting (70% chance for/against)
             die = random.randint(1, 10)
-            is_vote_for = die >= 5
+            is_vote_for = die >= 7
 
             if is_vote_for:
                 new_message['poll']['count_for'] += 1
