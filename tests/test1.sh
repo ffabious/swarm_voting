@@ -112,5 +112,6 @@ then
     exit 1
 fi
 
+pkill -9 python3 2>&1 >> /dev/null || true
 echo "Success: Robots reached majority vote"
 exit 0

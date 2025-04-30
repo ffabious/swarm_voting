@@ -85,7 +85,7 @@ function metric_logs_exist() {
     return 0
 }
 
-pkill -9 python3
+pkill -9 python3 2>&1 >> /dev/null || true
 remove_logs
 
 echo "Starting robots (timeout: ${TEST_TIMEOUT}s)..."
@@ -118,5 +118,6 @@ then
     exit 1
 fi
 
+pkill -9 python3 2>&1 >> /dev/null || true
 echo "Success: Robots reached majority vote"
 exit 0
