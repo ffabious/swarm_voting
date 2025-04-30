@@ -312,7 +312,7 @@ def handle_vote_message(message, robot_id):
         else:
             # Simulate random voting (70% chance for/against)
             die = random.randint(1, 10)
-            is_vote_for = die >= 7
+            is_vote_for = die >= 4
 
             if is_vote_for:
                 new_message['poll']['count_for'] += 1
@@ -456,6 +456,7 @@ def handle_client(client_socket, robot_id):
                 elif new_message['poll']['count_for'] > len(robots) // 2:
                     # Majority for - perform the action
                     perform_action(Topics(message['poll']['topic']), robot_id)
+                    perform_graceful_shutdown(robot_id)
 
 
                     # Convert to action message and propagate
@@ -469,8 +470,7 @@ def handle_client(client_socket, robot_id):
                             'topic': message['poll']['topic']
                         },
                         'message': f"Action '{Topics(message['poll']['topic']).name}' initiated by robot {message['sender_id']}."
-                    }
-                    
+                    }                    
                 else:
                     # No majority yet - continue voting
                     log_message(f"Robot{robot_id} : Poll for {topic} still in progress.")
