@@ -1,7 +1,7 @@
 #!/bin/bash
 
 TOTAL_ROBOTS=20
-TEST_TIMEOUT=90
+TEST_TIMEOUT=30
 
 function remove_logs() {
     echo "Removing old logs..."
@@ -51,7 +51,7 @@ function robot_logs_exist() {
         return 1
     fi
 
-    for ((i=1;i<=n_robots;i++))
+    for ((i=1;i<=num_robots;i++))
     do
         if [ ! -f "$log_directory/robot_$i.log" ]
         then
@@ -73,11 +73,11 @@ function metric_logs_exist() {
         return 1
     fi
 
-    for ((i=1;i<=n_robots;i++))
+    for ((i=1;i<=num_robots;i++))
     do
-        if [ ! -f "$metric_directory/robot_$i.log" ]
+        if [ ! -f "$metric_directory/robot_${i}_metrics.log" ]
         then
-            echo "Log '$metric_directory/robot_$i.log' does not exist"
+            echo "Log '$metric_directory/robot_${i}_metrics.log' does not exist"
             return 1
         fi
     done
@@ -92,8 +92,8 @@ echo "Starting robots (timeout: ${TEST_TIMEOUT}s)..."
 run_robots
 
 echo "Shutting down robots..."
-pkill -f "robot.py"
-sleep 5  
+pkill -2 -f "robot.py"
+sleep 5 
 
 echo "Robots stopped, checking logs..."
 
