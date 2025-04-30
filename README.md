@@ -11,8 +11,7 @@ This project implements a decentralized decision-making system for robot swarms 
 - [Logs & Metrics](#logs--metrics)
 - [Metrics Description](#metrics-description)
 - [Project Structure](#project-structure)
-
-## Description
+- [Contribution](#contribution)
 
 ## Installation
 
@@ -24,7 +23,22 @@ Clone the repository:
 
 ## Usage
 
-1. Configure robot network in ```setupN.json```:
+1. The robot can be configured using command-line arguments:
+
+| Argument             | Type     | Description                                                                 |
+|----------------------|----------|-----------------------------------------------------------------------------|
+| `id`                 | int      | **(Required)** Unique ID of the robot.                                      |
+| `host`               | str      | Host address of the robot. Default: `localhost`.                            |
+| `port`               | int      | Port number of the robot. Default: `8000`.                                  |
+| `-a`, `--automate`   | flag     | Enable automatic configuration from a JSON file. Overrides host/port/test.  |
+| `-f`, `--file`       | str      | Path to the robot setup JSON file. Default: `setup3.json`.                  |
+| `--test_send`        | flag     | Enables sending a test message to a peer.                                   |
+| `--server_host`      | str      | Host of the peer server (used with `--test_send`). Default: `localhost`.    |
+| `--server_port`      | int      | Port of the peer server (used with `--test_send`).                          |
+| `--timeout`          | float    | Consensus timeout in seconds. Default: `30.0`.                              |
+| `--all_vote_against` | flag     | Forces robot to vote against any proposal (for testing purposes).           |
+
+2. Configure robot network in ```setupN.json```:
     ```json
     {
         "1": {
@@ -44,7 +58,7 @@ Clone the repository:
         }
     }
     ```
-2. Run the swarm. For eachrobot ID in ```setupN.json```, launch a process in the background:
+     Run the swarm. For eachrobot ID in ```setupN.json```, launch a process in the background:
     ```bash
     python robot.py -f setupN.json -a 1 &
     python robot.py -f setupN.json -a 2 &
@@ -124,3 +138,7 @@ swarm_voting/
 ├─ robot_logs/            # Generated logs
 └─ robot_metrics/         # Generated metrics
 ```
+
+## Contribution
+
+Feel free to fork the repo, make changes, and submit a pull request. Ensure code is formatted and commented clearly.
